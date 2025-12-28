@@ -1,0 +1,57 @@
+/* Custom Blog Styles */
+
+/* Table of Contents Styling matching the image */
+.toc-box {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    padding: 24px;
+    border-radius: 4px;
+    margin-bottom: 32px;
+}
+
+.toc-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #343a40;
+    /* Dark grey */
+    margin-bottom: 16px;
+    font-family: serif;
+}
+
+.toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.toc-list li {
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.toc-list li a {
+    color: #c0392b;
+    /* Reddish color for headings as seen in image */
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.toc-list li a:hover {
+    color: #a93226;
+    text-decoration: underline;
+}
+
+/* Nested lists in TOC */
+.toc-list ul {
+    list-style: none;
+    padding-left: 20px;
+    margin-top: 8px;
+}
+
+/* Content Headings styling inside article */
+article h2,
+article h3 {
+    color: #c0392b !important;
+    /* Force red headers */
+}

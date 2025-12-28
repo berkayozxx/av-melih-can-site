@@ -1,0 +1,22 @@
+[
+  {
+    "id": "1766958516871",
+    "name": "Test User",
+    "phone": "5551234567",
+    "email": "test@example.com",
+    "subject": "Genel Danışmanlık",
+    "message": "This is a browser test message.",
+    "date": "29.12.2025 00:48:36",
+    "read": false
+  },
+  {
+    "id": "1766953075303",
+    "name": "dfasd asdasd",
+    "phone": " sdadasd",
+    "email": "sadas@gmail.com",
+    "subject": "Genel Danışmanlık",
+    "message": "sadasda",
+    "date": "28.12.2025 23:17:55",
+    "read": false
+  }
+]

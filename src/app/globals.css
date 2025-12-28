@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-serif: var(--font-playfair), serif;
+  --font-sans: var(--font-inter), sans-serif;
+
+  --color-primary: #3B82F6;
+  /* Electric Blue */
+  --color-primary-dark: #1D4ED8;
+  --color-secondary: #1F2937;
+  /* Dark Gray */
+  --color-accent: #60A5FA;
+  /* Light Blue */
+  --color-gold: #D4AF37;
+  /* Keep gold for accents */
+  --color-background: #050505;
+  /* Black */
+  --color-foreground: #F3F4F6;
+  /* Off-White */
+  --color-card: #121212;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    @apply font-sans antialiased selection:bg-primary selection:text-white;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-serif text-white font-bold;
+  }
+}
+
+@layer utilities {
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .glass-panel {
+    @apply bg-white/90 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+}
