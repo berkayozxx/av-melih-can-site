@@ -4,7 +4,7 @@ import { collection, getDocs, addDoc, query, orderBy, deleteDoc, doc } from 'fir
 
 export async function GET() {
     try {
-        const q = query(collection(db, "posts"), orderBy("date", "desc"));
+        const q = query(collection(db, "posts"));
         const querySnapshot = await getDocs(q);
         const posts = querySnapshot.docs.map(doc => ({
             id: doc.id,

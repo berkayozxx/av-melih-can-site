@@ -6,55 +6,43 @@ import path from 'path';
 
 export async function GET() {
     try {
-        const postsRef = collection(db, "posts");
-
-        // 1. Get all existing posts in one go to check for duplicates efficiently
-        const snapshot = await getDocs(postsRef);
-        const existingSlugs = new Set();
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.slug) existingSlugs.add(data.slug);
-        });
-
-        // 2. Read local data
         const dataFilePath = path.join(process.cwd(), 'src/data/posts.json');
+
+        // Fail gracefully
+        if (!fs.existsSync(dataFilePath)) {
+            return NextResponse.json({ error: 'JSON dosyası bulunamadı.' }, { status: 404 });
+        }
+
         const fileData = fs.readFileSync(dataFilePath, 'utf8');
         const posts = JSON.parse(fileData);
 
-        // 3. Prepare Batch
+        // Use writeBatch for atomic operation
         const batch = writeBatch(db);
         let count = 0;
-        let skipped = 0;
 
         for (const post of posts) {
-            if (existingSlugs.has(post.slug)) {
-                skipped++;
-                continue;
-            }
+            // Use the JSON ID ("1", "2") as the Document ID.
+            // This is IDEMPOTENT: If it runs twice, it just updates the same doc.
+            // No need to query DB first.
+            const postRef = doc(db, "posts", post.id.toString());
 
-            // Create a new document reference
-            const newDocRef = doc(postsRef); // Auto-ID
-
-            const { id, ...postData } = post;
-
-            batch.set(newDocRef, {
-                ...postData,
+            // We include 'id' inside the doc too, just in case
+            batch.set(postRef, {
+                ...post,
                 createdAt: new Date().toISOString()
             });
             count++;
         }
 
-        // 4. Commit Batch (if there is anything to commit)
-        if (count > 0) {
-            await batch.commit();
-        }
+        // Commit all 20 writes in one go
+        await batch.commit();
 
         return NextResponse.json({
             success: true,
-            message: `Hızlı Seed Tamamlandı. Eklenen: ${count}, Zaten Varolan: ${skipped}. Toplam Kontrol: ${posts.length}`
+            message: `Hızlı Seed (Direct Write) Tamamlandı. İşlenen Yazı: ${count}.`
         });
     } catch (error) {
         console.error("Seeding error:", error);
-        return NextResponse.json({ error: 'Seeding failed: ' + error }, { status: 500 });
+        return NextResponse.json({ error: 'Seeding failed: ' + error.message }, { status: 500 });
     }
 }

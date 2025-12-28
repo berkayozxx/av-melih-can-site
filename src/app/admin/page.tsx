@@ -27,7 +27,17 @@ export default function AdminPage() {
     }, [isAuthenticated]);
 
     const fetchPosts = () => {
-        fetch('/api/posts').then(res => res.json()).then(setPosts);
+        fetch('/api/posts')
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    setPosts(data);
+                } else {
+                    console.error("API returned non-array:", data);
+                    setPosts([]);
+                }
+            })
+            .catch(err => console.error("Fetch posts failed:", err));
     };
 
     const fetchMessages = () => {
