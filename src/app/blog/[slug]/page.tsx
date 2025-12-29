@@ -3,13 +3,14 @@ import { useEffect, useState, use } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
-import { Search, ChevronRight, Calendar, User, Share2, Facebook, Twitter, Linkedin, FileText } from 'lucide-react';
-import './blog.css'; // We will create this for specific styles
+import { Search, ChevronRight, Calendar, User, Share2, Facebook, Twitter, Linkedin, FileText, AlertCircle } from 'lucide-react';
+import './blog.css';
 
 export default function BlogPost({ params }: { params: Promise<{ slug: string }> }) {
     const [post, setPost] = useState<any>(null);
-    const [posts, setPosts] = useState<any[]>([]); // For sidebar recent posts/categories
+    const [posts, setPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [slug, setSlug] = useState<string>('');
 
     useEffect(() => {
@@ -18,36 +19,69 @@ export default function BlogPost({ params }: { params: Promise<{ slug: string }>
 
     useEffect(() => {
         if (!slug) return;
-        fetch('/api/posts')
-            .then(res => res.json())
-            .then(data => {
-                setPosts(data);
-                const found = data.find((p: any) => p.slug === slug);
-                setPost(found);
+
+        const fetchData = async () => {
+            try {
+                const res = await fetch('/api/posts');
+                const data = await res.json();
+
+                if (Array.isArray(data)) {
+                    setPosts(data);
+                    const found = data.find((p: any) => p.slug === slug);
+                    setPost(found);
+                } else {
+                    console.error("API returned non-array:", data);
+                    setError("Veriler yüklenirken hata oluştu.");
+                }
+            } catch (err) {
+                console.error("Fetch error:", err);
+                setError("Bağlantı hatası.");
+            } finally {
                 setLoading(false);
-            });
+            }
+        };
+
+        fetchData();
     }, [slug]);
 
     // Unique categories
     const categories = Array.from(new Set(posts.map((p: any) => p.category || 'Genel')));
 
     if (loading) return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-[#050505] flex flex-col">
             <Header />
             <div className="flex-grow flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
+            </div>
+            <Footer />
+        </div>
+    );
+
+    if (error) return (
+        <div className="min-h-screen bg-[#050505] flex flex-col">
+            <Header />
+            <div className="flex-grow flex flex-col items-center justify-center text-center p-4">
+                <AlertCircle size={48} className="text-red-500 mb-4" />
+                <h1 className="text-2xl font-bold text-white mb-2">Bir Hata Oluştu</h1>
+                <p className="text-gray-400 mb-6">{error}</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                    Yeniden Dene
+                </button>
             </div>
             <Footer />
         </div>
     );
 
     if (!post) return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-[#050505] flex flex-col">
             <Header />
             <div className="flex-grow flex flex-col items-center justify-center text-center p-4">
-                <h1 className="text-4xl font-serif font-bold text-gray-800 mb-4">404</h1>
-                <p className="text-xl text-gray-600 mb-8">Aradığınız yazı bulunamadı.</p>
-                <Link href="/blog" className="px-6 py-3 bg-primary text-white rounded hover:bg-primary-light transition-colors">
+                <h1 className="text-4xl font-serif font-bold text-white mb-4">404</h1>
+                <p className="text-xl text-gray-400 mb-8">Aradığınız yazı bulunamadı.</p>
+                <Link href="/blog" className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
                     Bloga Dön
                 </Link>
             </div>
@@ -59,8 +93,8 @@ export default function BlogPost({ params }: { params: Promise<{ slug: string }>
         <div className="flex flex-col min-h-screen bg-[#050505] font-sans">
             <Header />
 
-            {/* Hero Header with Background Image if available, else Dark */}
-            <div className={`relative pt-40 pb-24 ${post.image ? 'bg-black/60' : 'bg-primary'} text-white overflow-hidden`}>
+            {/* Hero Header */}
+            <div className={`relative pt-40 pb-24 ${post.image ? 'bg-black/60' : 'bg-red-900'} text-white overflow-hidden`}>
                 {post.image && (
                     <>
                         <div className="absolute inset-0 z-0">
@@ -105,9 +139,8 @@ export default function BlogPost({ params }: { params: Promise<{ slug: string }>
             <div className="container-custom py-16">
                 <div className="flex flex-col lg:flex-row gap-12">
 
-                    {/* Main Content (Left) */}
+                    {/* Main Content */}
                     <div className="lg:w-2/3">
-                        {/* Article Content - Dark Mode Adapted */}
                         <article className={`prose prose-lg max-w-none prose-invert 
                             prose-headings:font-serif prose-headings:text-red-600 
                             prose-a:text-red-500 prose-a:no-underline hover:prose-a:text-red-400
@@ -137,7 +170,7 @@ export default function BlogPost({ params }: { params: Promise<{ slug: string }>
                         </div>
                     </div>
 
-                    {/* Sidebar (Right) */}
+                    {/* Sidebar */}
                     <aside className="lg:w-1/3 space-y-8">
                         {/* Search */}
                         <div className="bg-[#111] p-6 rounded-2xl border border-white/10">

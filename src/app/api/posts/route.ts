@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, query, deleteDoc, doc } from 'firebase/firestore';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
@@ -11,10 +13,12 @@ export async function GET() {
             ...doc.data()
         }));
 
-        return NextResponse.json(posts);
+        // Return empty array explicitly if no posts
+        return NextResponse.json(Array.isArray(posts) ? posts : []);
     } catch (error) {
         console.error("Error getting documents: ", error);
-        return NextResponse.json({ error: 'Veriler alınamadı' }, { status: 500 });
+        // Return empty array on error to prevent frontend crash
+        return NextResponse.json([], { status: 500 });
     }
 }
 
@@ -44,7 +48,7 @@ export async function POST(request: Request) {
             image: body.image || null,
             font: body.font || 'font-sans',
             category: body.category || 'Genel',
-            createdAt: new Date() // Useful for sorting
+            createdAt: new Date().toISOString()
         };
 
         const docRef = await addDoc(collection(db, "posts"), newPost);
@@ -66,6 +70,7 @@ export async function DELETE(request: Request) {
         await deleteDoc(doc(db, "posts", id));
         return NextResponse.json({ success: true });
     } catch (error) {
+        console.error("Error deleting document: ", error);
         return NextResponse.json({ error: 'Silme işlemi başarısız.' }, { status: 500 });
     }
 }

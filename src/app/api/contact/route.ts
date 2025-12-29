@@ -1,21 +1,31 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, orderBy, query } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query } from 'firebase/firestore';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        const q = query(collection(db, "messages"), orderBy("date", "desc"));
+        // Note: Removed orderBy to avoid requiring Firebase index
+        // Messages will be sorted client-side if needed
+        const q = query(collection(db, "messages"));
         const querySnapshot = await getDocs(q);
         const messages = querySnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
+
+        // Sort by createdAt descending (newest first) on server before returning
+        messages.sort((a: any, b: any) => {
+            const dateA = new Date(a.createdAt || a.date || 0).getTime();
+            const dateB = new Date(b.createdAt || b.date || 0).getTime();
+            return dateB - dateA;
+        });
+
         return NextResponse.json(messages);
     } catch (error) {
         console.error("Error fetching messages:", error);
-        return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });
+        return NextResponse.json([], { status: 500 });
     }
 }
 

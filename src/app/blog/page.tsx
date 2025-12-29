@@ -3,19 +3,37 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Calendar, User, ArrowRight } from 'lucide-react';
+import { Calendar, User, ArrowRight, AlertCircle } from 'lucide-react';
 
 export default function BlogListing() {
     const [posts, setPosts] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch('/api/posts')
-            .then(res => res.json())
-            .then(data => {
-                setPosts(data);
+        const fetchPosts = async () => {
+            try {
+                const res = await fetch('/api/posts');
+                const data = await res.json();
+
+                // Validate that data is an array
+                if (Array.isArray(data)) {
+                    setPosts(data);
+                } else {
+                    console.error("API returned non-array:", data);
+                    setPosts([]);
+                    setError("Veriler yüklenirken bir hata oluştu.");
+                }
+            } catch (err) {
+                console.error("Fetch error:", err);
+                setPosts([]);
+                setError("Bağlantı hatası. Lütfen sayfayı yenileyin.");
+            } finally {
                 setIsLoading(false);
-            });
+            }
+        };
+
+        fetchPosts();
     }, []);
 
     return (
@@ -31,6 +49,20 @@ export default function BlogListing() {
                             Yargıtay kararları, mevzuat değişiklikleri ve hukuki süreçler hakkında uzman görüşleri.
                         </p>
                     </div>
+
+                    {/* Error State */}
+                    {error && (
+                        <div className="flex items-center justify-center gap-3 bg-red-900/20 border border-red-600/30 text-red-400 px-6 py-4 rounded-xl mb-8">
+                            <AlertCircle size={20} />
+                            <span>{error}</span>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="ml-4 px-4 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
+                            >
+                                Yenile
+                            </button>
+                        </div>
+                    )}
 
                     {isLoading ? (
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 animate-pulse">
@@ -58,7 +90,7 @@ export default function BlogListing() {
                                     <div className="p-8 flex flex-col flex-grow relative">
                                         <div className="flex items-center gap-4 text-xs text-gray-500 mb-4 font-medium uppercase tracking-wider">
                                             <span className="flex items-center gap-1"><Calendar size={14} className="text-red-500" /> {post.date}</span>
-                                            <span className="flex items-center gap-1"><User size={14} className="text-red-500" /> {post.author.split(' ')[0]}.</span>
+                                            <span className="flex items-center gap-1"><User size={14} className="text-red-500" /> {post.author?.split(' ')[0] || 'Av'}.</span>
                                         </div>
 
                                         <h2 className="text-2xl font-bold text-gray-100 mb-4 leading-tight group-hover:text-red-500 transition-colors font-serif">
@@ -81,7 +113,7 @@ export default function BlogListing() {
                         </div>
                     )}
 
-                    {posts.length === 0 && !isLoading && (
+                    {posts.length === 0 && !isLoading && !error && (
                         <div className="text-center py-20 bg-[#111] rounded-2xl border border-white/10">
                             <p className="text-gray-500 text-lg">Henüz yayınlanmış bir yazı bulunmamaktadır.</p>
                         </div>
