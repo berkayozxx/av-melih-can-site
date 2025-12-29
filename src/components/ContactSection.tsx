@@ -9,14 +9,13 @@ export default function ContactSection() {
         e.preventDefault();
         setFormStatus('sending');
 
-        // Collect form data
-        const form = e.target as HTMLFormElement;
+        const formData = new FormData(e.currentTarget as HTMLFormElement);
         const data = {
-            name: (form.elements[0] as HTMLInputElement).value,
-            phone: (form.elements[1] as HTMLInputElement).value,
-            email: (form.elements[2] as HTMLInputElement).value,
-            subject: (form.elements[3] as HTMLSelectElement).value,
-            message: (form.elements[4] as HTMLTextAreaElement).value,
+            name: formData.get('name') as string,
+            phone: formData.get('phone') as string,
+            email: formData.get('email') as string,
+            subject: formData.get('subject') as string,
+            message: formData.get('message') as string,
         };
 
         try {
@@ -26,14 +25,18 @@ export default function ContactSection() {
                 body: JSON.stringify(data)
             });
 
+            const responseData = await res.json();
+
             if (res.ok) {
                 setFormStatus('success');
-                form.reset();
-                setTimeout(() => setFormStatus('idle'), 3000);
+                (e.target as HTMLFormElement).reset();
+                setTimeout(() => setFormStatus('idle'), 5000); // 5 seconds to read success message
             } else {
+                console.error("Form submission failed:", responseData);
                 setFormStatus('error');
             }
         } catch (error) {
+            console.error("Network error:", error);
             setFormStatus('error');
         }
     };
@@ -53,20 +56,20 @@ export default function ContactSection() {
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-sm font-bold text-gray-400 mb-2">Adınız Soyadınız</label>
-                                    <input required type="text" className="w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all bg-black text-white placeholder-gray-600" placeholder="İsim Soyisim" />
+                                    <input required name="name" type="text" className="w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all bg-black text-white placeholder-gray-600" placeholder="İsim Soyisim" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-gray-400 mb-2">Telefon Numaranız</label>
-                                    <input required type="tel" className="w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all bg-black text-white placeholder-gray-600" placeholder="05XX XXX XX XX" />
+                                    <input required name="phone" type="tel" className="w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all bg-black text-white placeholder-gray-600" placeholder="05XX XXX XX XX" />
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-400 mb-2">E-posta Adresiniz</label>
-                                <input required type="email" className="w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all bg-black text-white placeholder-gray-600" placeholder="ornek@email.com" />
+                                <input required name="email" type="email" className="w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all bg-black text-white placeholder-gray-600" placeholder="ornek@email.com" />
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-400 mb-2">Konu</label>
-                                <select className="w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all bg-black text-white">
+                                <select name="subject" className="w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all bg-black text-white">
                                     <option>Genel Danışmanlık</option>
                                     <option>Ceza Hukuku</option>
                                     <option>Aile Hukuku</option>
@@ -78,14 +81,15 @@ export default function ContactSection() {
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-400 mb-2">Mesajınız</label>
-                                <textarea required rows={4} className="w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all bg-black text-white placeholder-gray-600" placeholder="Hukuki sorununuzu kısaca özetleyiniz..."></textarea>
+                                <textarea required name="message" rows={4} className="w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all bg-black text-white placeholder-gray-600" placeholder="Hukuki sorununuzu kısaca özetleyiniz..."></textarea>
                             </div>
 
                             <button
+                                type="submit"
                                 disabled={formStatus === 'sending' || formStatus === 'success'}
                                 className={`w-full py-4 rounded-xl font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${formStatus === 'success' ? 'bg-green-600 text-white' : (formStatus === 'error' ? 'bg-red-600 text-white' : 'bg-primary text-white hover:bg-white hover:text-primary')}`}
                             >
-                                {formStatus === 'sending' ? 'Gönderiliyor...' : formStatus === 'success' ? 'Mesajınız İletildi' : formStatus === 'error' ? 'Bir Hata Oluştu' : (
+                                {formStatus === 'sending' ? 'Gönderiliyor...' : formStatus === 'success' ? 'Mesajınız İletildi' : formStatus === 'error' ? 'Hata Oluştu (Tekrar Dene)' : (
                                     <>
                                         Gönder <Send size={18} />
                                     </>
