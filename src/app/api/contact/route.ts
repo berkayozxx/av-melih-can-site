@@ -1,59 +1,44 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, getDocs, orderBy, query } from 'firebase/firestore';
 
-const messagesFilePath = path.join(process.cwd(), 'src/data/messages.json');
-
-function getMessages() {
-    try {
-        if (fs.existsSync(messagesFilePath)) {
-            const fileData = fs.readFileSync(messagesFilePath, 'utf8');
-            return JSON.parse(fileData);
-        }
-        return [];
-    } catch (error) {
-        return [];
-    }
-}
-
-function saveMessages(messages: any[]) {
-    try {
-        const dir = path.dirname(messagesFilePath);
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        fs.writeFileSync(messagesFilePath, JSON.stringify(messages, null, 2));
-    } catch (e) {
-        console.error("Error saving messages", e);
-    }
-}
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
-    const messages = getMessages();
-    return NextResponse.json(messages);
+    try {
+        const q = query(collection(db, "messages"), orderBy("date", "desc"));
+        const querySnapshot = await getDocs(q);
+        const messages = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        return NextResponse.json(messages);
+    } catch (error) {
+        console.error("Error fetching messages:", error);
+        return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });
+    }
 }
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const messages = getMessages();
 
         const newMessage = {
-            id: Date.now().toString(),
             name: body.name,
             phone: body.phone,
             email: body.email,
             subject: body.subject,
             message: body.message,
             date: new Date().toLocaleString('tr-TR'),
-            read: false
+            read: false,
+            createdAt: new Date().toISOString()
         };
 
-        messages.unshift(newMessage);
-        saveMessages(messages);
+        const docRef = await addDoc(collection(db, "messages"), newMessage);
 
-        return NextResponse.json({ success: true, message: newMessage });
-    } catch (e) {
+        return NextResponse.json({ success: true, message: { id: docRef.id, ...newMessage } });
+    } catch (error) {
+        console.error("Error saving message:", error);
         return NextResponse.json({ error: 'Failed to save message' }, { status: 500 });
     }
 }
